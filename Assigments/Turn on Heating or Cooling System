@@ -1,0 +1,111 @@
+#include "./MyConfigFile.inc"
+#include <xc.inc>
+
+;----------------
+; PROGRAM INPUTS
+;----------------
+;The DEFINE directive is used to create macros or symbolic names for values.
+;It is more flexible and can be used to define complex expressions or sequences of instructions.
+;It is processed by the preprocessor before the assembly begins.
+
+#define  measuredTempInput 	5 ; this is the input value 
+#define  refTempInput 		15 ; this is the input value
+
+;---------------------
+; Definitions
+;---------------------
+#define SWITCH    LATD,2  
+#define LED0      PORTD,0
+#define LED1	  PORTD,1
+    
+;---------------------
+; Program Constants
+;---------------------
+; The EQU (Equals) directive is used to assign a constant value to a symbolic name or label.
+; It is simpler and is typically used for straightforward assignments.
+;It directly substitutes the defined value into the code during the assembly process.
+    
+REG10   equ     10h   // in HEX
+REG11   equ     11h
+REG01   equ     1h
+
+;-------------
+;Main Program
+;-------------   
+;Define all the constants with proper register numbers. 
+measuredTemp EQU 0x21 ; Measured temperature location in reg 0x21
+refTemp      EQU 0x20 ; Referenced temperature location in reg 0x20
+contReg      EQU 0x22 ; We store the contReg in 0x22
+nume         EQU 0x30 ; We store numerator value in 0x30
+quotient     EQU 0x31 ;We store quotient in 0x31
+deno         EQU 10   ;We store the denominator 10 decimal
+	   
+    PSECT absdata,abs,ovrld  
+    ORG 0x20                ;Assign the start of the code in the program memory
+    BANKSEL	ANSELD      ;Setting up PORTD
+    CLRF	ANSELD 
+    MOVLW	0x00 
+    MOVWF	TRISD
+    MOVLW measuredTempInput  ;measured Input into WREG
+    MOVWF measuredTemp       ;store measuredTempInput value into reg 0x21
+    MOVLW refTempInput       ;reference input into WREG
+    MOVWF refTemp            ;refTempInput value into reg 0x20
+    CALL  decimal            ;Hex to Decimal
+decimal:
+    MOVLW 0x00
+    ADDWF measuredTemp,0  ;add measured input and 0 and store in WREG. This changes STATUS
+    BN checksign  ;Branch if negative in STATUS
+    
+//THIS CONVERSION WAS OBTAINED FROM THE TESXTBOOK
+operations: BANKSEL nume
+    MOVWF nume  ;move measured input into NUME register, the numerator
+    MOVLW deno    ;WREG = 10, the denominator
+    CLRF quotient  ;clear quotient
+DM_1:
+    INCF quotient, F ;increment quotient for every sub
+    SUBWF nume ;sub WREG from NUME value
+    BC DM_1     ;if positive go back (C = 1 for positive)
+    ADDWF nume ;once too many, this is our first digit
+    DECF quotient, F ;once too many for quotient
+    MOVFF nume, 0x70 ;save the first digit in 0x70
+    MOVFF quotient, nume ;repeat the process one more time
+    CLRF quotient
+DM_2:
+    INCF quotient, F ;increment quotient for every sub
+    SUBWF nume ;sub WREG from NUME value
+    BC DM_2     ;if positive go back (C = 1 for positive)
+    ADDWF nume ;once too many, this is our first digit
+    DECF quotient, F ;once too many for quotient
+    MOVFF nume, 0x71 ;2nd digit saved in 0x71
+    MOVFF quotient, 0x72 ;3rd digit saved in 0x72
+    CLRF quotient
+;other instructions for 
+    MOVLW refTempInput ;store reference input into WREG
+    MOVWF nume  ;move reference input into NUME register, the numerator
+    MOVLW deno    ;WREG = 10, the denominator
+    CLRF quotient  ;clear quotient
+    
+DR_1:
+    INCF quotient, F ;increment quotient for every sub
+    SUBWF nume ;sub WREG from NUME value
+    BC DR_1     ;if positive go back (C = 1 for positive)
+    ADDWF nume ;once too many, this is our first digit
+    DECF quotient, F ;once too many for quotient
+    MOVFF nume, 0x60 ;save the first digit in 0x70
+    MOVFF quotient, nume ;repeat the process one more time
+    CLRF quotient
+DR_2:
+    INCF quotient, F ;increment quotient for every sub
+    SUBWF nume ;sub WREG from NUME value
+    BC DR_2     ;if positive go back (C = 1 for positive)
+    ADDWF nume ;once too many, this is our first digit
+    DECF quotient, F ;once too many for quotient
+    MOVFF nume, 0x61 ;2nd digit saved in 0x61
+    MOVFF quotient, 0x62 ;3rd digit saved in 0x62
+    RETURN
+checksign:
+    NEGF WREG ;negate negative number, 2s complement, so we get positive
+    GOTO operations
+READY:
+    END
+    
