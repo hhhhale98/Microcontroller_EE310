@@ -1,3 +1,22 @@
+// Title: Turn on Heating or Cooling System 
+//-----------------------------
+// Purpose:The goal of this program is to compare two input values (temperatures) and then
+//         decide to turn on the heating system if it is cold or turn on the cooling
+//         system if it is to hot. If measured temperature (-10 Degree Celsius to +60 Degree Celsius)
+//         is the same as reference(+10 Degree to +50 Degree celsius), then we do nothing.
+//         For these decisions we use branches BZ and BN to GO TO the corresponding labels.
+//         We also converted inputs HEX to decimal numbers and placed each digit in a different resgister.This 
+//         was achieve trough looping of the digits with SUBWF (divide by 10) and DECF and INCF operands.
+// Dependencies: MyConfigFile.inc (Header File) 
+// Compiler: MPLABX IDE V6.30
+// Author: Heybee Esquer Cheno 
+// OUTPUTS: PORTD.2 connected to cooling system which is a fan(contReg=2)
+//          PORTD.1 connected to heating system which is a hot air blower(contReg=1)
+// INPUTS: measuredTemp which is connected to temperature sensor
+//         refTemp which is connected to a keypad
+// Versions:
+//  	V1.0: 3/12/2026 - First version 
+
 #include "./MyConfigFile.inc"
 #include <xc.inc>
 
