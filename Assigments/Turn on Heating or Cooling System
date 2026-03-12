@@ -8,7 +8,7 @@
 ;It is more flexible and can be used to define complex expressions or sequences of instructions.
 ;It is processed by the preprocessor before the assembly begins.
 
-#define  measuredTempInput 	5 ; this is the input value 
+#define  measuredTempInput 	-5 ; this is the input value 
 #define  refTempInput 		15 ; this is the input value
 
 ;---------------------
@@ -51,6 +51,11 @@ deno         EQU 10   ;We store the denominator 10 decimal
     MOVLW refTempInput       ;reference input into WREG
     MOVWF refTemp            ;refTempInput value into reg 0x20
     CALL  decimal            ;Hex to Decimal
+    MOVLW measuredTempInput ;store measured input into WREG
+    SUBWF refTemp,0         ;refTemp-measuredTemp
+    BN    LED_HOT           ;branch to LED_HOT if measuredTemp>refTemp (when I get negative bit active)
+    BZ    LED_OFF           ;branch to LED_OFF when the difference of inputs are zero
+    GOTO  LED_COLD
 decimal:
     MOVLW 0x00
     ADDWF measuredTemp,0  ;add measured input and 0 and store in WREG. This changes STATUS
@@ -103,9 +108,28 @@ DR_2:
     MOVFF nume, 0x61 ;2nd digit saved in 0x61
     MOVFF quotient, 0x62 ;3rd digit saved in 0x62
     RETURN
+ LED_HOT:
+    MOVLW 0x04
+    MOVWF PORTD
+    MOVLW 0X02
+    MOVWF contReg
+    GOTO READY 
+ LED_OFF:
+    MOVLW 0x00
+    MOVWF PORTD
+    MOVLW 0X00
+    MOVWF contReg
+    GOTO READY
+LED_COLD:
+    MOVLW 0x02
+    MOVWF PORTD
+    MOVLW 0X01
+    MOVWF contReg
+    GOTO READY
+    
 checksign:
     NEGF WREG ;negate negative number, 2s complement, so we get positive
     GOTO operations
 READY:
-    END
+    sleep
     
