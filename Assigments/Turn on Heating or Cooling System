@@ -16,6 +16,9 @@
 //         refTemp which is connected to a keypad
 // Versions:
 //  	V1.0: 3/12/2026 - First version 
+//      V2.0: 3/12/2026  
+//      V3.0: 3/12/2026
+//      V4.0: 3/12/2026
 
 #include "./MyConfigFile.inc"
 #include <xc.inc>
@@ -115,7 +118,7 @@ DR_1:
     BC DR_1     ;if positive go back (C = 1 for positive)
     ADDWF nume ;once too many, this is our first digit
     DECF quotient, F ;once too many for quotient
-    MOVFF nume, 0x60 ;save the first digit in 0x70
+    MOVFF nume, 0x60 ;save the first digit in 0x60
     MOVFF quotient, nume ;repeat the process one more time
     CLRF quotient
 DR_2:
@@ -127,21 +130,21 @@ DR_2:
     MOVFF nume, 0x61 ;2nd digit saved in 0x61
     MOVFF quotient, 0x62 ;3rd digit saved in 0x62
     RETURN
- LED_HOT:
-    MOVLW 0x04
-    MOVWF PORTD
+ LED_HOT:             
+    MOVLW 0x04        ;We activate PortD2, to activate LED on there we need to output (100) for bit 2 
+    MOVWF PORTD       ;which is 0x04 in HEXA. ContReg=2
     MOVLW 0X02
     MOVWF contReg
     GOTO READY 
- LED_OFF:
+ LED_OFF:              ;nothing happens all outputs 00
     MOVLW 0x00
     MOVWF PORTD
     MOVLW 0X00
     MOVWF contReg
     GOTO READY
 LED_COLD:
-    MOVLW 0x02
-    MOVWF PORTD
+    MOVLW 0x02      ;We activate PortD1, to activate LED on there we need to output (010) for bit 1
+    MOVWF PORTD     ;which is 0x02 in HEXA. ContReg=1
     MOVLW 0X01
     MOVWF contReg
     GOTO READY
@@ -152,3 +155,4 @@ checksign:
 READY:
     sleep
     
+
