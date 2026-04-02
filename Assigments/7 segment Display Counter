@@ -23,8 +23,9 @@
 // INPUTS: PORTB.0 Button A (increasing,active low)
 //         PORTB.1 Button B (decreasing, active low)
 // Versions:
-//  	V1.0: 4/1/2026 - First version
-//      V2.0: 4/2/2026 
+//  	V1.0: 4/1/2026 - First version 
+//  	V2.0: 4/2/2026 
+//  	V3.0: 4/2/2026 
 #include "./MyConfigFile.inc"
 #include <xc.inc>
 
@@ -38,6 +39,7 @@ innerDelay  EQU 0x35
 ;-----------------------------------------------------------
 ; Each number from 0-F to activate respective PORTD segments
 ;------------------------------------------------------------
+PSECT tabdata,class=CODE,reloc=0
 TableSegment:
     DB  0x3F  ; display 0
     DB  0x06  ; display 1
