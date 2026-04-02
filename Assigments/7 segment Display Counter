@@ -1,3 +1,29 @@
+// Title: 7 Segment Display Counter 
+//-----------------------------
+// Purpose:The goal of this program is to create a counter that goes from 0 to F (15 in decimal)
+//         If button A is pressed then 7 segment display (common cathode) will show the counter numbers in increasing order.
+//         If button B is pressed then 7 segment display will show the counter numbers in decreasing order.
+//         When both buttons are pressed at the same time, then 0 will appear on the 7 segment display.
+//         If a button stops being pressed, then the counter will show the last number that counted, and 
+//         the next action (increasing/decreasing) of the counter should start from that last number.
+//         This was achieved by using table pointers that saved the hex values that represented the bits that 
+//         are supposed to be high and low in order to activate the segments that correspond (display) certain 
+//         number on the counter. The time delay between displaying each number is about .390 seconds and 
+//         was achieve by using inner, outer loops and calling the delay function.
+// Dependencies: MyConfigFile.inc (Header File). This is for a PIC18F47K42. 
+// Compiler: MPLABX IDE V6.30/XC8 pic-as.
+// Author: Heybee Esquer Cheno 
+// OUTPUTS: PORTD.0 Activates Segment A of the 7 Segment Display
+//          PORTD.1 Activates Segment B of the 7 Segment Display
+//          PORTD.2 Activates Segment C of the 7 Segment Display
+//	    PORTD.3 Activates Segment D of the 7 Segment Display
+//	    PORTD.4 Activates Segment E of the 7 Segment Display
+//	    PORTD.5 Activates Segment F of the 7 Segment Display
+//	    PORTD.6 Activates Segment G of the 7 Segment Display
+// INPUTS: PORTB.0 Button A (increasing,active low)
+//         PORTB.1 Button B (decreasing, active low)
+// Versions:
+//  	V1.0: 4/1/2026 - First version 
 #include "./MyConfigFile.inc"
 #include <xc.inc>
 ;----------------------------
