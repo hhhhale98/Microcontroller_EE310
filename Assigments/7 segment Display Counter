@@ -23,24 +23,53 @@
 // INPUTS: PORTB.0 Button A (increasing,active low)
 //         PORTB.1 Button B (decreasing, active low)
 // Versions:
-//  	V1.0: 4/1/2026 - First version 
+//  	V1.0: 4/1/2026 - First version
+//      V2.0: 4/2/2026 
 #include "./MyConfigFile.inc"
 #include <xc.inc>
+
 ;----------------------------
 ; Program constants
 ;----------------------------
 counter     EQU 0x30
-outerDelay  EQU 0X31
+outerDelay  EQU 0x31
 innerDelay  EQU 0x35
 
-    PSECT absdata,abs,ovrld
-    PSECT resetVec,class=CODE,reloc=2
+;-----------------------------------------------------------
+; Each number from 0-F to activate respective PORTD segments
+;------------------------------------------------------------
+TableSegment:
+    DB  0x3F  ; display 0
+    DB  0x06  ; display 1
+    DB  0x5B  ; display 2
+    DB  0x4F  ; display 3
+    DB  0x66  ; display 4
+    DB  0x6D  ; display 5
+    DB  0x7D  ; display 6
+    DB  0x07  ; display 7
+    DB  0x7F  ; display 8
+    DB  0x6F  ; display 9
+    DB  0x77  ; display A
+    DB  0x7C  ; display b
+    DB  0x39  ; display C
+    DB  0x5E  ; display d
+    DB  0x79  ; display E
+    DB  0x71  ; display F
+    
+;----------------------------
+; main code
+;----------------------------
+PSECT absdata,abs,ovrld
+PSECT resetVec,class=CODE,reloc=2
 Vect:
     GOTO    initialize
     ORG     0x20
 
+;----------------------------
+; Program Initialization
+;----------------------------
 initialize:
-    CLRF    counter  ;initialize counter
+    CLRF    counter          ; initialize counter
     ;-------------------------
     ; Disable analog inputs
     ;-------------------------
@@ -55,7 +84,7 @@ initialize:
     BANKSEL LATB
     CLRF    LATB
     BANKSEL TRISB
-    MOVLW   0b00000011 ;Set RB[0:1] as inputs
+    MOVLW   0b00000011      ; Set RB[0:1] as inputs
     MOVWF   TRISB 
     BANKSEL WPUB
     BSF     WPUB,0
@@ -81,32 +110,31 @@ main:
     BTFSS   PORTB,0
     GOTO    RB0pressed
     ;-------------------------
-    ; RB0 not pressed
+    ; RB0 not pressed, check port RB1
     ;------------------------- 
     BTFSS   PORTB,1
     GOTO    CountDown
     GOTO    main
-    
-   ; -------------------------
-   ; RB0 is pressed
-   ; -------------------------
+
+;----------------------------
+; RB0 is pressed
+;----------------------------
 RB0pressed:
     BTFSS   PORTB,1
     GOTO    zero
     GOTO    CountUp
-    
 ; -------------------------
 ; Get a zero when both pressed
 ; -------------------------
 zero:
-    CLRF   counter,0
-    CALL   Show
-    CALL   delay
-    GOTO   main
+    CLRF    counter,0
+    CALL    Show
+    CALL    delay
+    GOTO    main
 
-; -------------------------
-; Count up
-; -------------------------
+;----------------------------
+; Count Up
+;----------------------------
 CountUp:
     INCF    counter,1,0
     MOVLW   0x10
@@ -115,17 +143,16 @@ CountUp:
     CLRF    counter,0
 
 afterUp:
-    CALL   Show
-    CALL   delay
-    GOTO   main
+    CALL    Show
+    CALL    delay
+    GOTO    main
 
-; -------------------------
-; Count down
-; -------------------------
+;----------------------------
+; Count Down
+;----------------------------
 CountDown:
     MOVF    counter,0,0
     BNZ     Normal
-
     MOVLW   0x0F
     MOVWF   counter,0
     GOTO    afterDown
@@ -134,25 +161,9 @@ Normal:
     DECF    counter,1,0
 
 afterDown:
-    CALL   Show
-    CALL   delay
-    GOTO   main
-
-;--------------------------------------------
-; Writes pattern to PORTD with Table pointers
-;--------------------------------------------
-Show:
-    MOVLW   low TableSegment
-    MOVWF   TBLPTRL,1
-    MOVLW   high TableSegment
-    MOVWF   TBLPTRH,1
-    MOVLW   low highword TableSegment
-    MOVWF   TBLPTRU,1
-    MOVF    counter,0,0
-    ADDWF   TBLPTRL,1,1
-    TBLRD*
-    MOVFF   TABLAT, LATD
-    RETURN
+    CALL    Show
+    CALL    delay
+    GOTO    main
 
 ;-------------------------------
 ; delay function about 0.390 sec
@@ -173,25 +184,20 @@ inner:
     DECFSZ  outerDelay,1,0
     GOTO    outer
     RETURN
+;--------------------------------------------
+; Writes pattern to PORTD with Table pointers
+;--------------------------------------------
+Show:
+    MOVLW   low TableSegment
+    MOVWF   TBLPTRL,1
+    MOVLW   high TableSegment
+    MOVWF   TBLPTRH,1
+    MOVLW   low highword TableSegment
+    MOVWF   TBLPTRU,1
+    MOVF    counter,0,0
+    ADDWF   TBLPTRL,1,1
+    TBLRD*
+    MOVFF   TABLAT, LATD
+    RETURN
 
-;------------------------------------------------------------
-; Each number from 0-F to activate respective PORTD segments 
-;------------------------------------------------------------
-TableSegment:
-    DB  0x3F  ; display 0
-    DB  0x06  ; display 1
-    DB  0x5B  ; display 2
-    DB  0x4F  ; display 3
-    DB  0x66  ; display 4
-    DB  0x6D  ; display 5
-    DB  0x7D  ; display 6
-    DB  0x07  ; display 7
-    DB  0x7F  ; display 8
-    DB  0x6F  ; display 9
-    DB  0x77  ; display A
-    DB  0x7C  ; display b
-    DB  0x39  ; display C
-    DB  0x5E  ; display d
-    DB  0x79  ; display E
-    DB  0x71  ; display F
-    END
+END
