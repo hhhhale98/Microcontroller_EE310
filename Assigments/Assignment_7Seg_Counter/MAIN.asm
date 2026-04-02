@@ -1,0 +1,198 @@
+// Title: 7 Segment Display Counter 
+//-----------------------------
+// Purpose:The goal of this program is to create a counter that goes from 0 to F (15 in decimal)
+//         If button A is pressed then 7 segment display (common cathode) will show the counter numbers in increasing order.
+//         If button B is pressed then 7 segment display will show the counter numbers in decreasing order.
+//         When both buttons are pressed at the same time, then 0 will appear on the 7 segment display.
+//         If a button stops being pressed, then the counter will show the last number that counted, and 
+//         the next action (increasing/decreasing) of the counter should start from that last number.
+//         This was achieved by using table pointers that saved the hex values that represented the bits that 
+//         are supposed to be high and low in order to activate the segments that correspond (display) certain 
+//         number on the counter. The time delay between displaying each number is about .390 seconds and 
+//         was achieve by using inner, outer loops and calling the delay function.
+// Dependencies: MyConfigFile.inc (Header File). This is for a PIC18F47K42. 
+// Compiler: MPLABX IDE V6.30/XC8 pic-as.
+// Author: Heybee Esquer Cheno 
+// OUTPUTS: PORTD.0 Activates Segment A of the 7 Segment Display
+//          PORTD.1 Activates Segment B of the 7 Segment Display
+//          PORTD.2 Activates Segment C of the 7 Segment Display
+//	    PORTD.3 Activates Segment D of the 7 Segment Display
+//	    PORTD.4 Activates Segment E of the 7 Segment Display
+//	    PORTD.5 Activates Segment F of the 7 Segment Display
+//	    PORTD.6 Activates Segment G of the 7 Segment Display
+// INPUTS: PORTB.0 Button A (increasing,active low)
+//         PORTB.1 Button B (decreasing, active low)
+// Versions:
+//  	V1.0: 4/1/2026 - First version 
+//  	V2.0: 4/2/2026
+//  	V3.0: 4/2/2026
+#include "./MyConfigFile.inc"
+#include <xc.inc>
+;----------------------------
+; Program constants
+;----------------------------
+counter     EQU 0x30
+outerDelay  EQU 0x31
+innerDelay  EQU 0x35
+;-----------------------------------------------------------
+; Each number from 0-F to activate respective PORTD segments
+;------------------------------------------------------------
+PSECT tabdata,class=CODE,reloc=0
+TableSegment:
+    DB  0x3F  ; display 0
+    DB  0x06  ; display 1
+    DB  0x5B  ; display 2
+    DB  0x4F  ; display 3
+    DB  0x66  ; display 4
+    DB  0x6D  ; display 5
+    DB  0x7D  ; display 6
+    DB  0x07  ; display 7
+    DB  0x7F  ; display 8
+    DB  0x6F  ; display 9
+    DB  0x77  ; display A
+    DB  0x7C  ; display b
+    DB  0x39  ; display C
+    DB  0x5E  ; display d
+    DB  0x79  ; display E
+    DB  0x71  ; display F   
+;----------------------------
+; main code
+;----------------------------
+PSECT absdata,abs,ovrld
+PSECT resetVec,class=CODE,reloc=2
+Vect:
+    GOTO    initialize
+    ORG     0x20
+;----------------------------
+; Program Initialization
+;----------------------------
+initialize:
+    CLRF    counter          ; initialize counter
+    ;-------------------------
+    ; Disable analog inputs
+    ;-------------------------
+    BANKSEL ANSELB
+    CLRF ANSELB
+    BANKSEL ANSELD
+    CLRF ANSELD
+    ;-------------------------
+    ; PORTB INPUTS BUTTONS
+    ; RB0 and RB1 as Inputs (1)
+    ;-------------------------
+    BANKSEL LATB
+    CLRF    LATB
+    BANKSEL TRISB
+    MOVLW   0b00000011      ; Set RB[0:1] as inputs
+    MOVWF   TRISB 
+    BANKSEL WPUB
+    BSF     WPUB,0
+    BSF     WPUB,1
+    ;-------------------------
+    ; PORTD OUTPUT 7-SEGMENT
+    ; RD0-RD7 as Outputs (0)
+    ;-------------------------
+    BANKSEL LATD
+    CLRF    LATD
+    BANKSEL TRISD
+    CLRF    TRISD
+    ;-------------------------
+    ; GET TABLE POINTERS
+    ;-------------------------
+    CALL    Show
+main:
+    BANKSEL PORTB
+    ;-------------------------
+    ; CHECK RB0
+    ;------------------------- 
+    BTFSS   PORTB,0      ;test RB0, if 1 not pressed and skip next instruction
+    GOTO    RB0pressed   ;if RB0=0 then it was pressed and do this
+    ;-------------------------
+    ; RB0 not pressed, check port RB1
+    ;------------------------- 
+    BTFSS   PORTB,1    ;test RB1, if 1 not pressed and skip next instruction, goto main
+    GOTO    CountDown  ;if RB1=0 then it was pressed and do count down
+    GOTO    main
+;----------------------------
+; RB0 is pressed
+;----------------------------
+RB0pressed:
+    BTFSS   PORTB,1 ;test RB1, if 1 not pressed and skip next instruction, count up
+    GOTO    zero    ;if RB1=0 then it was pressed and do zero
+    GOTO    CountUp
+; -------------------------
+; Get a zero when both pressed
+; -------------------------
+zero:
+    CLRF    counter,0 ;zero display
+    CALL    Show      ;table read
+    CALL    delay     ;delay added
+    GOTO    main      ;goes to main
+;----------------------------
+; Count Up
+;----------------------------
+CountUp:
+    INCF    counter,1,0  ;increments by 1
+    MOVLW   0x10
+    CPFSEQ  counter,0
+    GOTO    afterUp      ;shows number, add delay
+    CLRF    counter,0
+
+afterUp:
+    CALL    Show
+    CALL    delay
+    GOTO    main
+
+;----------------------------
+; Count Down
+;----------------------------
+CountDown:
+    MOVF    counter,0,0
+    BNZ     Normal
+    MOVLW   0x0F
+    MOVWF   counter,0
+    GOTO    afterDown  ;shows number, add delay
+
+Normal:
+    DECF    counter,1,0  ;decreases by 1
+
+afterDown:
+    CALL    Show
+    CALL    delay
+    GOTO    main
+
+;-------------------------------
+; delay function about 0.390 sec
+;-------------------------------
+delay:
+    MOVLW   0xFF
+    MOVWF   outerDelay,0
+outer:
+    MOVLW   0xFF
+    MOVWF   innerDelay,0
+inner:
+    NOP
+    NOP
+    NOP
+    NOP
+    DECFSZ  innerDelay,1,0 
+    GOTO    inner
+    DECFSZ  outerDelay,1,0
+    GOTO    outer
+    RETURN
+;--------------------------------------------
+; Writes pattern to PORTD with Table pointers
+;--------------------------------------------
+Show:
+    MOVLW   low TableSegment
+    MOVWF   TBLPTRL,1
+    MOVLW   high TableSegment
+    MOVWF   TBLPTRH,1
+    MOVLW   low highword TableSegment
+    MOVWF   TBLPTRU,1
+    MOVF    counter,0,0
+    ADDWF   TBLPTRL,1,1
+    TBLRD*
+    MOVFF   TABLAT, LATD
+    RETURN
+
+END
