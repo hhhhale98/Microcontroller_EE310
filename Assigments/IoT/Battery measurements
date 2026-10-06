@@ -1,0 +1,41 @@
+/*
+ * Project: Battery Measurements
+ * Class: EE470 - Introduction to the Internet of Things
+ * Author: Heybee Esquer Cheno
+ * Date: 10/4/2026
+ * Purpose: Measure battery voltage every minute.
+ *Specifications: Using baud rate 115200. 
+ */
+#include <Arduino.h>
+
+void setup()
+{
+    Serial.begin(115200);
+
+    Serial.println("Time(min), ADC, Battery(V)");
+}
+
+void loop()
+{
+    static unsigned long measurementNumber = 0;
+
+    int adcValue = analogRead(A0);
+
+    // Convert ADC reading to voltage at A0
+    float voltageA0 = (adcValue / 1023.0) * 3.3;
+
+    // for 22k / 10k voltage divider
+    float batteryVoltage = voltageA0 * 3.2;
+
+    // Print data
+    Serial.print(measurementNumber);
+    Serial.print(", ");
+    Serial.print(adcValue);
+    Serial.print(", ");
+    Serial.println(batteryVoltage, 3);
+
+    measurementNumber++;
+
+    // Wait 1 minute
+    delay(60000);
+}
