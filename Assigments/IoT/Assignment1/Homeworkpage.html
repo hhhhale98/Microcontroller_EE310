@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Favorite Class Portfolio</title>
+    <!-- Bootstrap 5 CSS CDN for clean layouts and components -->
+    <link href="https://jsdelivr.net" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f4f6f6; /* Soft light grey background */
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+        .hero-banner {
+            background-color: #0b6a5a; /* Matching dark teal color from the image */
+            color: #ffffff;
+            padding: 3rem 2rem;
+            margin-bottom: 2.5rem;
+        }
+        .assignment-card {
+            background-color: #ffffff;
+            border: 1px solid #eef2f2;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+            padding: 2.5rem;
+            margin-bottom: 2rem;
+        }
+        .custom-badge {
+            background-color: #e2f4f1;
+            color: #0b6a5a;
+            font-size: 0.85rem;
+            font-weight: 500;
+            padding: 0.35rem 0.85rem;
+            border-radius: 50px;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        .header-bar {
+            background-color: #0b6a5a;
+            color: white;
+            display: inline-block;
+            font-size: 1.35rem;
+            font-weight: 600;
+            padding: 0.5rem 1.25rem;
+            border-radius: 8px;
+            vertical-align: middle;
+        }
+        .assignment-list {
+            margin-top: 1.5rem;
+            padding-left: 1.25rem;
+        }
+        .assignment-list li {
+            margin-bottom: 0.5rem;
+            color: #333333;
+        }
+        .assignment-list a {
+            color: #0b6a5a;
+            text-decoration: underline;
+        }
+        .assignment-list a:hover {
+            color: #084d41;
+        }
+        .goal-text {
+            color: #555555;
+            font-size: 0.95rem;
+            margin-top: 1.5rem;
+            border-top: 1px solid #f0f0f0;
+            padding-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Top Dark Teal Header Banner -->
+    <div class="hero-banner">
+        <div class="container-md">
+            <h1 class="fw-bold display-6"> EE470 IoT</h1>
+            <h2 class="fw-bold display-6"> Heybee Esquer Cheno</h2>
+            <p class="lead mb-0 opacity-90" style="font-size: 1.05rem;">This page will serve as the main hub for all assignments, projects and resources for the rest of the semester.</p>
+        </div>
+    </div>
+
+    <!-- Main Assignment Container Workspace -->
+    <div class="container-md pb-5">
+        
+        <!-- Assignment 1 Block -->
+        <div class="assignment-card">
+            <div class="d-flex flex-wrap align-items-center gap-3 mb-4">
+                <span class="custom-badge">Assignment 1</span>
+                <div class="header-bar">Assignment 1: GitHub MySQL Code, Report</div>
+            </div>
+            
+            <ul class="assignment-list">
+                <!-- Replace 'YOUR_LINK_HERE' with your real assignment addresses -->
+                <li>GitHub — MySQL scripts: <a href="YOUR_LINK_HERE">Add link</a></li>
+                <li>Assignment report (PDF or page): <a href="YOUR_LINK_HERE">Add link</a></li>
+            </ul>
+            
+            <p class="goal-text"><strong>Goal:</strong> implement firmware to collect sensor data and store records in a MySQL table with clear schema and sample inserts.</p>
+        </div>
+
+        <!-- Assignment 2 Block -->
+        <div class="assignment-card">
+            <div class="d-flex flex-wrap align-items-center gap-3 mb-4">
+                <span class="custom-badge">Assignment 2</span>
+                <div class="header-bar">Building a Simple Dashboard</div>
+            </div>
+            
+            <ul class="assignment-list">
+                <li>GitHub — ESP code: <a href="YOUR_LINK_HERE">Add link</a></li>
+                <li>GitHub — MySQL scripts: <a href="YOUR_LINK_HERE">Add link</a></li>
+                <li>Assignment report (PDF or page): <a href="YOUR_LINK_HERE">Add link</a></li>
+            </ul>
+            
+            <p class="goal-text"><strong>Goal:</strong> create a basic dashboard that reads from your database and presents key sensor metrics.</p>
+        </div>
+
+    </div>
+
+</body>
+</html>
