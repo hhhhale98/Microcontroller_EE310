@@ -1,0 +1,260 @@
+
+<?php
+
+// ======================================
+// 1. CONFIGURATION AND DATABASE CONNECTION
+// ======================================
+
+error_reporting(E_ALL);
+ini_set('display_errors', '0');
+
+header('Content-Type: application/json; charset=utf-8');
+
+require_once __DIR__ . '/../secure/config.php';
+
+// Create database connection using config.php constants
+$conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
+
+// Check connection
+if ($conn->connect_error) {
+    http_response_code(500);
+
+    echo json_encode([
+        "error" => "Database connection failed."
+    ], JSON_PRETTY_PRINT);
+
+    exit;
+}
+
+$conn->set_charset("utf8mb4");
+
+// Function for JSON responses
+function respond($status, $response) {
+    global $conn;
+
+    http_response_code($status);
+
+    echo json_encode(
+        $response,
+        JSON_PRETTY_PRINT
+    );
+
+    if ($conn instanceof mysqli) {
+        $conn->close();
+    }
+
+    exit;
+}
+
+try {
+
+    // ======================================
+    // 2. RECEIVE BASE64-ENCODED MESSAGE
+    // ======================================
+
+    $queryString = $_SERVER['QUERY_STRING'] ?? '';
+
+    if (empty($queryString)) {
+        respond(400, [
+            "error" => "The encoded message is empty."
+        ]);
+    }
+
+    // Remove extra URL tracking parameters
+    $encodedMessage = explode('&', $queryString)[0];
+
+    $encodedMessage = trim($encodedMessage);
+
+    // ======================================
+    // 3. DECODE BASE64 MESSAGE
+    // ======================================
+
+    $decodedMessage = base64_decode(
+        $encodedMessage,
+        true
+    );
+
+    if ($decodedMessage === false) {
+        respond(400, [
+            "error" => "Invalid Base64 message."
+        ]);
+    }
+
+    // ======================================
+    // 4. PARSE DECODED MESSAGE
+    // ======================================
+
+    $decodedFields = [];
+
+    parse_str($decodedMessage, $decodedFields);
+
+    $input = $decodedFields;
+
+    // ======================================
+    // 5. VALIDATE REQUIRED PARAMETERS
+    // ======================================
+
+    if (
+        !isset($input['nodeId']) ||
+        !isset($input['nodeTemp']) ||
+        !isset($input['nodeHumidity']) ||
+        !isset($input['timeReceived']) ||
+        !is_string($input['timeReceived']) ||
+        trim($input['timeReceived']) === ''
+    ) {
+        respond(400, [
+            "error" => "Base64 message must include nodeId, nodeTemp, nodeHumidity, and timeReceived."
+        ]);
+    }
+
+    $nodeId = trim($input['nodeId']);
+    $nodeTemp = $input['nodeTemp'];
+    $nodeHumidity = $input['nodeHumidity'];
+    $timeReceived = trim($input['timeReceived']);
+
+    if (
+        $nodeId === '' ||
+        !is_numeric($nodeTemp) ||
+        !is_numeric($nodeHumidity)
+    ) {
+        respond(400, [
+            "error" => "Invalid sensor parameters."
+        ]);
+    }
+
+    $nodeTemp = (float)$nodeTemp;
+    $nodeHumidity = (float)$nodeHumidity;
+
+    // Validate temperature
+    if ($nodeTemp < -40 || $nodeTemp > 130) {
+        respond(400, [
+            "error" => "Temperature is outside the allowed range."
+        ]);
+    }
+
+    // Validate humidity
+    if ($nodeHumidity < 0 || $nodeHumidity > 100) {
+        respond(400, [
+            "error" => "Humidity is outside the allowed range."
+        ]);
+    }
+
+    // Validate timestamp
+    $date = DateTime::createFromFormat(
+        '!Y-m-d H:i:s',
+        $timeReceived
+    );
+
+    if (
+        !$date ||
+        $date->format('Y-m-d H:i:s') !== $timeReceived
+    ) {
+        respond(400, [
+            "error" => "Invalid timeReceived format."
+        ]);
+    }
+
+    // ======================================
+    // 6. CHECK REGISTERED SENSOR NODE
+    // ======================================
+
+    $stmt = $conn->prepare(
+        "SELECT node_name
+         FROM sensor_register
+         WHERE node_name = ?"
+    );
+
+    $stmt->bind_param("s", $nodeId);
+    $stmt->execute();
+
+    $stmt->store_result();
+
+    if ($stmt->num_rows === 0) {
+        $stmt->close();
+
+        respond(404, [
+            "error" => "Sensor node is not registered."
+        ]);
+    }
+
+    $stmt->close();
+
+    // ======================================
+    // 7. CHECK DUPLICATE READING
+    // ======================================
+
+    $stmt = $conn->prepare(
+        "SELECT reading_id
+         FROM sensor_data
+         WHERE node_name = ?
+         AND time_received = ?"
+    );
+
+    $stmt->bind_param(
+        "ss",
+        $nodeId,
+        $timeReceived
+    );
+
+    $stmt->execute();
+    $stmt->store_result();
+
+    if ($stmt->num_rows > 0) {
+        $stmt->close();
+
+        respond(409, [
+            "error" => "Duplicate sensor reading."
+        ]);
+    }
+
+    $stmt->close();
+
+    // ======================================
+    // 8. INSERT SENSOR DATA
+    // ======================================
+
+    $stmt = $conn->prepare(
+        "INSERT INTO sensor_data
+         (node_name, temperature, humidity, time_received)
+         VALUES (?, ?, ?, ?)"
+    );
+
+    $stmt->bind_param(
+        "sdds",
+        $nodeId,
+        $nodeTemp,
+        $nodeHumidity,
+        $timeReceived
+    );
+
+    $stmt->execute();
+
+    $stmt->close();
+
+    // ======================================
+    // 9. RETURN JSON RESPONSE
+    // ======================================
+
+    respond(200, [
+        "message" => "Reading inserted successfully for " . $nodeId . ".",
+
+        "decoded_message" => $decodedMessage,
+
+        "decoded_parameters" => [
+            "nodeId" => $nodeId,
+            "nodeTemp" => $nodeTemp,
+            "nodeHumidity" => $nodeHumidity,
+            "timeReceived" => $timeReceived
+        ]
+    ]);
+
+} catch (Throwable $e) {
+
+    respond(500, [
+        "error" => "Server or database error.",
+        "details" => $e->getMessage()
+    ]);
+
+}
+
+?>
